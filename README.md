@@ -697,6 +697,69 @@ DATABASE_URL=postgresql://user:password@localhost:5432/subledger
 **Q: Tests are failing, what should I do?**
 A: Run `pytest test_business_rules.py -v` to see detailed output
 
+## Collection can be checked from 
+
+https://garv-36-s-team.postman.co/workspace/My-Workspace~dfae84be-1c1d-442f-83ab-c3f90a31d96d/collection/4050601-10e440fd-2bf5-477e-931b-2272279c3a9e?action=share&source=copy-link&creator=4050601
+
+
+## Complete Workflow Example
+
+Run this sequence to test the full billing workflow:
+
+```bash
+# 1. Create a plan
+curl -X POST http://localhost:8000/api/v1/plans \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Premium Plan",
+    "description": "Premium features",
+    "billing_cycle": "monthly",
+    "price": "99.99",
+    "currency": "USD"
+  }'
+
+# 2. Create a customer
+curl -X POST http://localhost:8000/api/v1/customers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "company_name": "Acme Corp"
+  }'
+
+# 3. Create a subscription (assumes plan_id=1, customer_id=1)
+curl -X POST http://localhost:8000/api/v1/subscriptions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_id": 1,
+    "plan_id": 1
+  }'
+
+# 4. Generate an invoice (assumes subscription_id=1)
+curl -X POST http://localhost:8000/api/v1/invoices/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subscription_id": 1
+  }'
+
+# 5. Record a successful payment (assumes invoice_id=1)
+curl -X POST http://localhost:8000/api/v1/payments/record \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invoice_id": 1,
+    "amount": "99.99",
+    "currency": "USD",
+    "status": "success",
+    "provider_reference": "TXN-001"
+  }'
+
+# 6. View customer ledger (assumes customer_id=1)
+curl http://localhost:8000/api/v1/customers/1/ledger
+
+# 7. Check health
+curl http://localhost:8000/api/v1/health
+```
+
 ---
 
 ## 📄 License
